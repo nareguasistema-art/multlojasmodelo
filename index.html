@@ -21,7 +21,77 @@
     --amber:#F59E0B; --amber-bg:#2D1B00; --blue:#60A5FA; --blue-bg:#0D1B2E;
     --text:#F5F5F5; --text-2:#9CA3AF; --text-3:#6B7280;
     --surface:#141414; --inp-bg:#0F0F0F; --inner:#0F0F0F;
+    --accent-radius:50%; /* logo circular = clássico */
+    --card-radius:12px; --nav-radius:10px; --btn-radius:8px;
+    --card-accent:none; /* linha neon no topo dos cards = moderno */
   }
+
+  /* ===== TEMA CLÁSSICO — já é o :root, nada muda ===== */
+
+  /* ===== TEMA MODERNO (escuro índigo) ===== */
+  body.tema-moderno{
+    --bg:#0E0E14; --card:#13131C; --modal:#13131C; --border:#1E1E2E; --border2:#2A2A3A;
+    --gold:#818CF8; --gold-l:#A5B4FC; --gold-m:#4338CA;
+    --surface:#13131C; --inp-bg:#0E0E14; --inner:#0E0E14;
+    --text:#E2E8F0; --text-2:#64748B; --text-3:#475569;
+    --accent-radius:10px;
+    --card-radius:10px; --nav-radius:8px; --btn-radius:10px;
+    --card-accent:linear-gradient(90deg,#6366F1,#8B5CF6);
+  }
+  body.tema-moderno .card{border-radius:var(--card-radius);position:relative;padding-top:calc(20px + 2px)}
+  body.tema-moderno .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-accent);border-radius:var(--card-radius) var(--card-radius) 0 0}
+  body.tema-moderno .nav-btn.active{background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.25)}
+  body.tema-moderno .tab.active{background:rgba(99,102,241,.12);color:var(--gold)}
+  body.tema-moderno #topbar{background:rgba(19,19,28,.96)}
+  body.tema-moderno #sidebar{background:#0B0B10}
+  body.tema-moderno .side-logo{background:linear-gradient(135deg,#6366F1,#8B5CF6)}
+  body.tema-moderno .btn-primary{background:var(--gold);border-color:var(--gold);color:#fff}
+  body.tema-moderno ::-webkit-scrollbar-thumb{background:#2A2A3A}
+
+  /* ===== TEMA MODERNO CLARO ===== */
+  body.tema-moderno.tema-claro{
+    --bg:#F8F8FF; --card:#FFFFFF; --modal:#FFFFFF; --border:#E0E0F0; --border2:#C8C8E8;
+    --text:#1E1E3A; --text-2:#4A4A7A; --text-3:#8080A0;
+    --surface:#FFFFFF; --inp-bg:#F0F0F8; --inner:#EBEBF8;
+    --green-bg:#DCFCE7; --red-bg:#FEE2E2; --amber-bg:#FEF3C7; --blue-bg:#DBEAFE;
+  }
+  body.tema-moderno.tema-claro #sidebar{background:#1A1A2E}
+  body.tema-moderno.tema-claro #topbar{background:rgba(248,248,255,.97)}
+
+  /* ===== TEMA MINIMALISTA (claro por natureza) ===== */
+  body.tema-minimalista{
+    --bg:#FAFAF8; --card:#FFFFFF; --modal:#FFFFFF; --border:#E8E8E3; --border2:#D8D8D3;
+    --gold:#1A1A1A; --gold-l:#3A3A3A; --gold-m:#5A5A5A;
+    --surface:#FFFFFF; --inp-bg:#F4F4F0; --inner:#F0F0EC;
+    --text:#1A1A1A; --text-2:#5A5A5A; --text-3:#9CA3AF;
+    --green-bg:#DCFCE7; --red-bg:#FEE2E2; --amber-bg:#FEF3C7; --blue-bg:#DBEAFE;
+    --gold-m:#5A5A5A;
+    --accent-radius:8px;
+    --card-radius:10px; --nav-radius:8px; --btn-radius:6px;
+  }
+  body.tema-minimalista .side-logo{background:#1A1A1A}
+  body.tema-minimalista #sidebar{background:#1A1A1A}
+  body.tema-minimalista #topbar{background:rgba(250,250,248,.97)}
+  body.tema-minimalista .nav-btn.active{background:#F0F0EC;border-color:#D8D8D3;color:#1A1A1A}
+  body.tema-minimalista .tab.active{background:#FFFFFF;color:#1A1A1A}
+  body.tema-minimalista .btn-primary{background:#1A1A1A;border-color:#1A1A1A;color:#FFFFFF}
+  body.tema-minimalista .card{box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  body.tema-minimalista ::-webkit-scrollbar-thumb{background:#C8C8C0}
+
+  /* ===== TEMA MINIMALISTA ESCURO ===== */
+  body.tema-minimalista.tema-escuro{
+    --bg:#1A1A1A; --card:#242424; --modal:#242424; --border:#333333; --border2:#444444;
+    --gold:#F5F5F5; --gold-l:#FFFFFF; --gold-m:#B0B0B0;
+    --surface:#242424; --inp-bg:#1A1A1A; --inner:#1A1A1A;
+    --text:#F5F5F5; --text-2:#A0A0A0; --text-3:#6B6B6B;
+    --green-bg:#052E16; --red-bg:#2D0808; --amber-bg:#2D1B00; --blue-bg:#0D1B2E;
+  }
+  body.tema-minimalista.tema-escuro #sidebar{background:#0F0F0F}
+  body.tema-minimalista.tema-escuro .side-logo{background:#F5F5F5}
+  body.tema-minimalista.tema-escuro .nav-btn.active{background:#333;border-color:#555;color:#F5F5F5}
+  body.tema-minimalista.tema-escuro .btn-primary{background:#F5F5F5;border-color:#F5F5F5;color:#1A1A1A}
+
+  /* ===== CLARO PADRÃO (tema clássico claro) ===== */
   body.tema-claro{
     --bg:#F2F2EE; --card:#FFFFFF; --modal:#FFFFFF; --border:#E0E0D8; --border2:#D0D0C8;
     --text:#1A1A1A; --text-2:#5A5A5A; --text-3:#8A8A8A;
@@ -435,6 +505,8 @@ function migrarDados(){
   if(!c.msgPacoteRenovado) c.msgPacoteRenovado='Olá {nome}! 🎉 Seu pacote *{pacote}* do mês de {mes} foi renovado com sucesso!\n💈 Valor: {valor}\nObrigado pela confiança! Qualquer dúvida é só chamar.';
   // fallback de segmento: lojas antigas criadas antes do campo existir
   if(!c.segmento) c.segmento = 'Barbearia';
+  // fallback de tema: lojas antigas usam clássico
+  if(!c.tema) c.tema = 'classico';
 }
 
 /* ============ ÍCONES ============ */
@@ -557,9 +629,39 @@ function saveConfig(){
 }
 
 /* ============ TEMA ============ */
+/* ============ TEMA VISUAL (classico / moderno / minimalista) ============ */
+function aplicarTemaVisual(){
+  const tema = (state.config.tema || 'classico').toLowerCase();
+  // remove classes de tema anteriores
+  document.body.classList.remove('tema-moderno','tema-minimalista');
+  if(tema === 'moderno')     document.body.classList.add('tema-moderno');
+  if(tema === 'minimalista') document.body.classList.add('tema-minimalista');
+  // no minimalista, "claro" é o padrão — o toggle adiciona tema-escuro em vez de tema-claro
+  // para claro/escuro reaplicar após o tema visual estar definido
+  applyTema();
+}
+
 let temaClaro = LS.get(PFX+'tema') === 'claro';
-function applyTema(){ document.body.classList.toggle('tema-claro', temaClaro); const b=document.getElementById('btn-tema'); if(b){ b.innerHTML=temaClaro?ICON.moon(20,'#C9A84C'):ICON.sun(20,'#C9A84C'); } const bop=document.getElementById('btn-modo-op'); if(bop&&!_modoOpAtivo) bop.innerHTML=iconeMarca(18,'#C9A84C'); }
-function toggleTema(){ temaClaro=!temaClaro; LS.set(PFX+'tema',temaClaro?'claro':'escuro'); applyTema(); }
+function applyTema(){
+  const tema = (state.config.tema || 'classico').toLowerCase();
+  if(tema === 'minimalista'){
+    // minimalista: padrão é claro. botão de lua/sol adiciona 'tema-escuro'
+    document.body.classList.toggle('tema-claro', false);
+    document.body.classList.toggle('tema-escuro', !temaClaro);
+  } else {
+    document.body.classList.toggle('tema-claro', temaClaro);
+    document.body.classList.remove('tema-escuro');
+  }
+  const b=document.getElementById('btn-tema');
+  if(b){ b.innerHTML=temaClaro?ICON.moon(20,'#C9A84C'):ICON.sun(20,'#C9A84C'); }
+  const bop=document.getElementById('btn-modo-op');
+  if(bop&&!_modoOpAtivo) bop.innerHTML=iconeMarca(18,'#C9A84C');
+}
+function toggleTema(){
+  temaClaro=!temaClaro;
+  LS.set(PFX+'tema',temaClaro?'claro':'escuro');
+  applyTema();
+}
 
 /* ============ NOTAS ============ */
 let notasTimer=null;
@@ -3280,8 +3382,8 @@ async function boot(){
   migrarDados();
   autoBackupDiario();
   mostrarAvisoBackup();
-  applyTema();
   aplicarCorLoja();
+  aplicarTemaVisual();
   aplicarIconesMarca();
   // loading state
   const viewEl=document.getElementById('view');
@@ -3322,8 +3424,9 @@ async function boot(){
     const ok = await cloudLoad();
     setCloudStatus(ok?'☁️ Supabase sincronizado':'⚠️ Sem conexão — dados locais', ok?'#22C55E':'#F59E0B');
   }
-  // Aplica cor e ícone da loja DEPOIS de carregar os dados do Firebase
+  // Aplica cor, tema e ícone da loja DEPOIS de carregar os dados do Firebase
   aplicarCorLoja();
+  aplicarTemaVisual();
   aplicarIconesMarca();
   render();
   // Verificar notificações a cada 60 segundos
