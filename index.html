@@ -463,6 +463,10 @@ const ICON = {
   award:(p,c)=>svg('<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>',p,c),
   tag:(p,c)=>svg('<path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',p,c),
   cut:(p,c)=>svg('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>',p,c),
+  needle:(p,c)=>svg('<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>',p,c),
+  sparkle:(p,c)=>svg('<path d="M12 3l1.9 5.8a2 2 0 001.3 1.3L21 12l-5.8 1.9a2 2 0 00-1.3 1.3L12 21l-1.9-5.8a2 2 0 00-1.3-1.3L3 12l5.8-1.9a2 2 0 001.3-1.3L12 3z"/>',p,c),
+  spa:(p,c)=>svg('<path d="M12 13c1.5-4 4-6 8-6-1 5-4 7-8 7s-7-2-8-7c4 0 6.5 2 8 6z"/><path d="M12 22c0-4 0-6-1-9"/>',p,c),
+  store:(p,c)=>svg('<path d="M3 9l1-5h16l1 5M4 9v11h16V9M9 20v-6h6v6"/><path d="M3 9h18"/>',p,c),
 };
 const VERSAO='0.9.2.1';
 
@@ -510,12 +514,13 @@ function saveConfig(){
 
 /* ============ TEMA ============ */
 let temaClaro = LS.get(PFX+'tema') === 'claro';
-function applyTema(){ document.body.classList.toggle('tema-claro', temaClaro); const b=document.getElementById('btn-tema'); if(b){ b.innerHTML=temaClaro?ICON.moon(20,'#C9A84C'):ICON.sun(20,'#C9A84C'); } const bop=document.getElementById('btn-modo-op'); if(bop&&!_modoOpAtivo) bop.innerHTML=ICON.scissors(18,'#C9A84C'); }
+function applyTema(){ document.body.classList.toggle('tema-claro', temaClaro); const b=document.getElementById('btn-tema'); if(b){ b.innerHTML=temaClaro?ICON.moon(20,'#C9A84C'):ICON.sun(20,'#C9A84C'); } const bop=document.getElementById('btn-modo-op'); if(bop&&!_modoOpAtivo) bop.innerHTML=iconeMarca(18,'#C9A84C'); }
 function toggleTema(){ temaClaro=!temaClaro; LS.set(PFX+'tema',temaClaro?'claro':'escuro'); applyTema(); }
 
 /* ============ COR DA LOJA (corPrincipal do Firebase) ============ */
 function aplicarCorLoja(){
-  const cor = state.config.corPrincipal;
+  let cor = state.config.corPrincipal;
+  if(!cor || !/^#[0-9A-Fa-f]{6}$/.test(cor)) cor = segAtual().cor;
   if(!cor || !/^#[0-9A-Fa-f]{6}$/.test(cor)) return;
   const r=parseInt(cor.slice(1,3),16), g=parseInt(cor.slice(3,5),16), b=parseInt(cor.slice(5,7),16);
   const claro = '#'+[r,g,b].map(x=>Math.min(255,Math.round(x+(255-x)*0.35)).toString(16).padStart(2,'0')).join('');
@@ -524,6 +529,37 @@ function aplicarCorLoja(){
   root.setProperty('--gold', cor);
   root.setProperty('--gold-l', claro);
   root.setProperty('--gold-m', medio);
+}
+
+/* ============ SEGMENTOS (vocabulário + ícone por tipo de negócio) ============ */
+const SEGMENTOS = {
+  barbearia: { negocio:'Barbearia', prof:'Barbeiro',     profP:'Barbeiros',     icone:'scissors', cor:'#C9A84C' },
+  salao:     { negocio:'Salão',     prof:'Profissional', profP:'Profissionais', icone:'cut',      cor:'#C9A84C' },
+  estetica:  { negocio:'Clínica',   prof:'Esteticista',  profP:'Esteticistas',  icone:'sparkle',  cor:'#E0729B' },
+  tatuagem:  { negocio:'Estúdio',   prof:'Tatuador',     profP:'Tatuadores',    icone:'needle',   cor:'#6366F1' },
+  outro:     { negocio:'Negócio',   prof:'Profissional', profP:'Profissionais', icone:'store',    cor:'#C9A84C' },
+};
+function segAtual(){
+  const s = (state.config.segmento||'barbearia').toString().toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  if(s.indexOf('barbe')===0) return SEGMENTOS.barbearia;
+  if(s.indexOf('salao')===0||s.indexOf('salon')===0) return SEGMENTOS.salao;
+  if(s.indexOf('estetic')===0) return SEGMENTOS.estetica;
+  if(s.indexOf('tatua')===0||s.indexOf('tattoo')===0) return SEGMENTOS.tatuagem;
+  return SEGMENTOS[s] || SEGMENTOS.outro;
+}
+/* rótulo do profissional no singular/plural conforme o segmento */
+function vocabProf(){ return segAtual().prof; }
+function vocabProfP(){ return segAtual().profP; }
+function vocabNegocio(){ return segAtual().negocio; }
+/* ícone da marca conforme o segmento */
+function iconeMarca(size,cor){ const seg=segAtual(); return (ICON[seg.icone]||ICON.scissors)(size,cor||'currentColor'); }
+/* aplica o ícone da marca nos elementos fixos (sidebar/topbar) */
+function aplicarIconesMarca(){
+  const c1=document.querySelector('#sidebar .side-head .side-logo'); if(c1) c1.innerHTML=iconeMarca(16,'#0A0A0A');
+  const c2=document.querySelector('.side-logo.only-desktop'); if(c2) c2.innerHTML=iconeMarca(17,'#0A0A0A');
+  const brand=document.querySelector('#topbar-brand');
+  if(brand){ const old=brand.querySelector('svg'); if(old) old.remove(); brand.insertAdjacentHTML('afterbegin',iconeMarca(16,'#C9A84C')); }
 }
 
 /* ============ NOTAS ============ */
@@ -601,7 +637,7 @@ function pinRequired(){ return !!(state.config.pinHash)&&!sessionValida(); }
 function lockApp(){ LS.set(PFX+'session',null); _pinAtual=''; _pinErro=''; render(); }
 function viewPin(){
   return `<div style="text-align:center;width:100%;max-width:320px">
-    <div class="side-logo" style="margin:0 auto 16px;width:60px;height:60px">${ICON.scissors(24,'#0A0A0A')}</div>
+    <div class="side-logo" style="margin:0 auto 16px;width:60px;height:60px">${iconeMarca(24,'#0A0A0A')}</div>
     <h1 style="font-size:20px;font-weight:700;margin-bottom:4px">${esc(state.config.barbearia?.nome||'Barbearia')}</h1>
     <p style="font-size:13px;color:var(--text-3);margin-bottom:28px">Digite seu PIN para entrar</p>
     <div style="display:flex;gap:16px;justify-content:center;margin-bottom:${_pinErro?'14px':'28px'}">
@@ -680,7 +716,7 @@ const NAV = [
   {id:'clientes',ic:'users',l:'Clientes'},
   {id:'financeiro',ic:'dollar',l:'Financeiro'},
   {id:'produtos',ic:'package',l:'Produtos'},
-  {id:'barbeiros',ic:'cut',l:'Barbeiros'},
+  {id:'barbeiros',ic:'cut',l:vocabProfP()},
   {id:'pacotes',ic:'tag',l:'Pacotes'},
   {id:'configuracoes',ic:'settings',l:'Config.'},
 ];
@@ -700,6 +736,7 @@ function renderNav(){
   if(brandSpan) brandSpan.textContent=state.config.barbearia?.nome||'Na Régua';
   const sideBrand=document.getElementById('side-brand');
   if(sideBrand) sideBrand.textContent=state.config.barbearia?.nome||'Na Régua';
+  aplicarIconesMarca();
 }
 
 /* ============ STATUS ============ */
@@ -772,7 +809,7 @@ function viewDashboard(){
   const nomeBarbearia = state.config.barbearia?.nome || 'Minha Loja';
   return `
     <div style="margin-bottom:18px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">${ICON.scissors(18,'#C9A84C')}<h1 style="font-size:19px;font-weight:700">${esc(nomeBarbearia)}</h1></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">${iconeMarca(18,'#C9A84C')}<h1 style="font-size:19px;font-weight:700">${esc(nomeBarbearia)}</h1></div>
       <p style="color:var(--text-2);font-size:12px">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</p>
     </div>
     ${baixo.length?`<div style="padding:10px 14px;background:var(--amber-bg);border:1px solid #F59E0B40;border-radius:8px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--amber)">${ICON.warning(15,'#F59E0B')}<span><strong>${baixo.length} produto(s) com estoque baixo:</strong> ${baixo.map(p=>esc(p.nome)).join(', ')}</span></div>`:''}
@@ -837,7 +874,7 @@ function viewAgenda(){
       <input type="date" class="inp" style="flex:1;min-width:140px" value="${agFiltro}" onchange="agFiltro=this.value;render()">
       ${barbLocked
         ? `<div class="inp" style="flex:1;min-width:120px;display:flex;align-items:center;gap:6px;color:var(--gold);font-weight:600;font-size:12px">✂️ ${esc(currentBarbeiro)}</div>`
-        : (barbs.length>1?`<select class="inp" style="flex:1;min-width:120px" onchange="agFiltroBarb=this.value;render()"><option value="">Todos barbeiros</option>${barbs.map(b=>`<option value="${esc(b)}" ${agFiltroBarb===b?'selected':''}>${esc(b)}</option>`).join('')}</select>`:'')
+        : (barbs.length>1?`<select class="inp" style="flex:1;min-width:120px" onchange="agFiltroBarb=this.value;render()"><option value="">Todos ${vocabProfP().toLowerCase()}</option>${barbs.map(b=>`<option value="${esc(b)}" ${agFiltroBarb===b?'selected':''}>${esc(b)}</option>`).join('')}</select>`:'')
       }
       <select class="inp" style="flex:1;min-width:120px" onchange="agFiltroStatus=this.value;render()"><option value="">Todos status</option>${['agendado','concluido','cancelado'].map(s=>`<option value="${s}" ${agFiltroStatus===s?'selected':''}>${ST_LBL[s]}</option>`).join('')}</select>
     </div>
@@ -947,7 +984,7 @@ function modalWalkIn(){
     </div>
     <div class="field"><label class="lbl">Nome (apelido ou "Cliente")</label><input id="wi-nome" class="inp" placeholder="Ex: João, Cliente, Anônimo..."></div>
     <div class="field"><label class="lbl">Serviço</label><select id="wi-serv" class="inp"><option value="">Selecionar...</option>${state.config.servicos.map(s=>`<option>${esc(s.nome||s)}</option>`).join('')}</select></div>
-    <div class="field"><label class="lbl">Barbeiro</label><select id="wi-barb" class="inp"><option value="">Selecionar...</option>${state.config.barbeiros.map(b=>`<option>${esc(b)}</option>`).join('')}</select></div>
+    <div class="field"><label class="lbl">${vocabProf()}</label><select id="wi-barb" class="inp"><option value="">Selecionar...</option>${state.config.barbeiros.map(b=>`<option>${esc(b)}</option>`).join('')}</select></div>
     <div class="field"><label class="lbl">Produtos vendidos (opcional)</label>
       <select id="wi-prod-sel" class="inp" onchange="addWiProduto()"><option value="">Selecione um produto para adicionar...</option>${state.produtos.slice().sort((x,y)=>x.nome.localeCompare(y.nome)).map(p=>`<option value="${p.id}">${esc(p.nome)} · ${fmtMoney(p.preco)}</option>`).join('')}</select>
       <div id="wi-prod-list" style="margin-top:8px"></div>
@@ -999,7 +1036,7 @@ function modalAgenda(id){
     <div class="row2" style="overflow:hidden"><div class="field"><label class="lbl">Data</label><input id="m-data" type="date" class="inp" style="max-width:100%;min-width:0" value="${a.data}" onchange="ajustarHoraMin()" oninput="ajustarHoraMin()"></div>
       <div class="field"><label class="lbl">Hora</label><select id="m-hora" class="inp" style="max-width:100%;min-width:0">${gerarSlotsHora(a.hora, a.data)}</select></div></div>
     <div class="field"><label class="lbl">Serviço</label><select id="m-serv" class="inp"><option value="">Selecionar...</option>${state.config.servicos.map(s=>`<option ${a.servico===s.nome?'selected':''}>${esc(s.nome)}</option>`).join('')}</select></div>
-    <div class="field"><label class="lbl">Barbeiro</label><select id="m-barb" class="inp"><option value="">Selecionar...</option>${state.config.barbeiros.map(b=>`<option ${a.barbeiro===b?'selected':''}>${esc(b)}</option>`).join('')}</select></div>
+    <div class="field"><label class="lbl">${vocabProf()}</label><select id="m-barb" class="inp"><option value="">Selecionar...</option>${state.config.barbeiros.map(b=>`<option ${a.barbeiro===b?'selected':''}>${esc(b)}</option>`).join('')}</select></div>
     <div class="field"><label class="lbl">Status</label><select id="m-status" class="inp">${['agendado','concluido','cancelado'].map(s=>`<option value="${s}" ${a.status===s?'selected':''}>${ST_LBL[s]}</option>`).join('')}</select></div>
     <div class="field"><label class="lbl">Observações</label><textarea id="m-obs" class="inp" placeholder="Opcional...">${esc(a.obs)}</textarea></div>
     <div class="modal-foot"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveAgenda('${id||''}')">Salvar</button></div>
@@ -1290,7 +1327,7 @@ function modalConcluir(id){
     <div class="field"><label class="lbl">Forma de Pagamento</label><div class="pay-grid" id="cc-pay">
       ${[['pix','Pix'],['dinheiro','Dinheiro'],['debito',`Débito (−${state.config.taxaDebito}%)`],['credito',`Crédito (−${state.config.taxaCredito}%)`]].map(([v,l])=>`<button class="pay ${v==='pix'?'on':''}" data-p="${v}" onclick="setConcluirPay('${v}')">${l}</button>`).join('')}
     </div></div>
-    <div class="field"><label class="lbl">Gorjeta para o barbeiro (opcional)</label>
+    <div class="field"><label class="lbl">Gorjeta para o ${vocabProf().toLowerCase()} (opcional)</label>
       <div style="display:flex;gap:7px;margin-bottom:6px">
         ${[5,10,15,20].map(v=>`<button class="pay" data-tip="${v}" onclick="setConcluirTip(${v})" style="flex:1;font-size:12px;font-weight:700">R$\u00a0${v}</button>`).join('')}
         <button class="pay" data-tip="0" onclick="setConcluirTip(0)" style="font-size:12px">✕</button>
@@ -1345,7 +1382,7 @@ function updConcluir(){
   const liq=calcLiquido(f,concluirTmp.formaPagamento);
   const tip=gorjetaVal();
   const box=document.getElementById('cc-resumo');
-  if(box) box.innerHTML = (prod>0?`Serviço ${fmtMoney(serv)} + Produtos ${fmtMoney(prod)}<br>`:'')+`Valor final: <strong>${fmtMoney(f)}</strong>`+(Math.abs(liq-f)>0.001?` · Líquido após taxa: <strong>${fmtMoney(liq)}</strong>`:''  )+(tip>0?`<br><span style="color:var(--gold)">✨ Gorjeta: <strong>${fmtMoney(tip)}</strong> → 100% para o barbeiro</span>`:'');
+  if(box) box.innerHTML = (prod>0?`Serviço ${fmtMoney(serv)} + Produtos ${fmtMoney(prod)}<br>`:'')+`Valor final: <strong>${fmtMoney(f)}</strong>`+(Math.abs(liq-f)>0.001?` · Líquido após taxa: <strong>${fmtMoney(liq)}</strong>`:''  )+(tip>0?`<br><span style="color:var(--gold)">✨ Gorjeta: <strong>${fmtMoney(tip)}</strong> → 100% para o ${vocabProf().toLowerCase()}</span>`:'');
 }
 function confirmarConcluir(id){
   const a=state.agendamentos.find(x=>x.id===id); if(!a) return;
@@ -1618,7 +1655,7 @@ function relatorioCliente(id){
 
   <h2>Histórico completo de atendimentos</h2>
   <table>
-    <thead><tr><th>Data</th><th>Hora</th><th>Serviço</th><th>Barbeiro</th><th>Status</th><th style="text-align:right">Valor</th><th style="text-align:center">Pagto</th></tr></thead>
+    <thead><tr><th>Data</th><th>Hora</th><th>Serviço</th><th>${vocabProf()}</th><th>Status</th><th style="text-align:right">Valor</th><th style="text-align:center">Pagto</th></tr></thead>
     <tbody>${linhas||'<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px">Nenhum atendimento registrado</td></tr>'}</tbody>
   </table>
 
@@ -1669,7 +1706,7 @@ function viewBarbeiros(){
   };
   const modos=[['periodo','Período'],['dia','Dia'],['semana','Semana'],['mes','Mês']];  
   return `
-    <div class="sec-head"><div><h1>Barbeiros</h1><p>Produção e comissões por período</p></div></div>
+    <div class="sec-head"><div><h1>${vocabProfP()}</h1><p>Produção e comissões por período</p></div></div>
     <div class="tabs" style="margin-bottom:12px">${modos.map(([id,l])=>`<button class="tab ${barbModo===id?'active':''}" onclick="barbModo='${id}';render()">${l}</button>`).join('')}</div>
     ${barbModo==='periodo'?`
     <div class="card" style="padding:14px;margin-bottom:16px">
@@ -1734,7 +1771,7 @@ function viewBarbeiros(){
         ${pct===0?`<p style="font-size:11px;color:var(--text-3);margin-top:8px;text-align:center">Configure o % em Config → Financeiro</p>`:''}
         ${ags.length===0?`<p style="font-size:12px;color:var(--text-3);text-align:center;margin-top:8px">Nenhum serviço concluído neste período</p>`:''}
       </div>`;
-    }).join(''):`<div class="card empty">${ICON.cut(36,'#252525')}<p>Nenhum barbeiro cadastrado</p><button class="btn btn-primary" onclick="cfgTab='barbearia';setView('configuracoes')">Cadastrar Barbeiro</button></div>`}`;
+    }).join(''):`<div class="card empty">${ICON.cut(36,'#252525')}<p>Nenhum ${vocabProf().toLowerCase()} cadastrado</p><button class="btn btn-primary" onclick="cfgTab='barbearia';setView('configuracoes')">Cadastrar ${vocabProf()}</button></div>`}`;
 }function gerarRelatorioBarbeiro(b){
   const com = state.config.comissoes||{};
  const dias = barbModo==='semana'?weekDays(barbFiltro):[];
@@ -2233,7 +2270,7 @@ th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),
 
   <h2>Lançamentos em ordem cronológica</h2>
   <table>
-    <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Barbeiro</th><th>Categoria</th><th>Pagamento</th><th>Taxa</th><th>Preço Tabela</th><th style="text-align:right">Valor Líquido</th></tr></thead>
+    <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>${vocabProf()}</th><th>Categoria</th><th>Pagamento</th><th>Taxa</th><th>Preço Tabela</th><th style="text-align:right">Valor Líquido</th></tr></thead>
     <tbody>${linhasLanc||'<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px">Nenhum lançamento no período</td></tr>'}</tbody>
     <tfoot>
       <tr class="total-row"><td colspan="6">Total Entradas (líquido)</td><td style="text-align:right;color:#16a34a">+${fmtMoney(ent)}</td></tr>
@@ -2405,7 +2442,7 @@ function saveProduto(id){
 let cfgTab='barbearia';
 const VARS=['{nome}','{hora}','{data}','{servico}','{barbeiro}'];
 function viewConfig(){
-  const tabs=[['barbearia','Barbearia'],['taxas','Taxas'],['mensagens','Mensagens'],['servicos','Serviços'],['financeiro','Financeiro'],['nuvem','☁️ Nuvem']];
+  const tabs=[['barbearia',vocabNegocio()],['taxas','Taxas'],['mensagens','Mensagens'],['servicos','Serviços'],['financeiro','Financeiro'],['nuvem','☁️ Nuvem']];
   let body='';
   const cfg=state.config;
   if(cfgTab==='barbearia'){
@@ -2416,17 +2453,17 @@ function viewConfig(){
   <button class="btn btn-red" onclick="fazerLogout()">🚪 Sair do sistema</button>
 </div>`:`<div style="margin-bottom:16px"><button class="btn btn-red" onclick="fazerLogout()">🚪 Sair do sistema</button></div>`}
       <h3 style="font-size:14px;margin-bottom:14px">Dados</h3>
-      <div class="field"><label class="lbl">Nome da Barbearia</label><input class="inp" value="${esc(cfg.barbearia.nome)}" onchange="cfg_set('barbearia.nome',this.value)"></div>
+      <div class="field"><label class="lbl">Nome d${vocabNegocio()==='Salão'?'o Salão':'a '+vocabNegocio()}</label><input class="inp" value="${esc(cfg.barbearia.nome)}" onchange="cfg_set('barbearia.nome',this.value)"></div>
       <div class="field"><label class="lbl">Endereço</label><input class="inp" value="${esc(cfg.barbearia.endereco)}" placeholder="Endereço completo" onchange="cfg_set('barbearia.endereco',this.value)"></div>
-      <h3 style="font-size:14px;margin:18px 0 12px">Barbeiros</h3>
+      <h3 style="font-size:14px;margin:18px 0 12px">${vocabProfP()}</h3>
       <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px">${cfg.barbeiros.map((b,i)=>`<span class="chip">${esc(b)}<button onclick="cfg_delArr('barbeiros',${i})">×</button></span>`).join('')}</div>
-      <div style="display:flex;gap:7px"><input class="inp" style="flex:1" placeholder="Nome do barbeiro" onkeydown="if(event.key==='Enter')cfg_addArr('barbeiros',this)"><button class="btn btn-primary" onclick="cfg_addArr('barbeiros',this.previousElementSibling)">Adicionar</button></div>
+      <div style="display:flex;gap:7px"><input class="inp" style="flex:1" placeholder="Nome do ${vocabProf().toLowerCase()}" onkeydown="if(event.key==='Enter')cfg_addArr('barbeiros',this)"><button class="btn btn-primary" onclick="cfg_addArr('barbeiros',this.previousElementSibling)">Adicionar</button></div>
     </div>
     <div class="card" style="margin-top:14px">
-      <h3 style="font-size:14px;margin-bottom:4px">✂️ Meu perfil de barbeiro</h3>
-      <p style="font-size:12px;color:var(--text-2);margin-bottom:14px">Vincule sua conta ao seu nome de barbeiro. Agenda e Modo Operação vão abrir direto na sua fila.</p>
+      <h3 style="font-size:14px;margin-bottom:4px">${iconeMarca(14,'#C9A84C')} Meu perfil de ${vocabProf().toLowerCase()}</h3>
+      <p style="font-size:12px;color:var(--text-2);margin-bottom:14px">Vincule sua conta ao seu nome de ${vocabProf().toLowerCase()}. Agenda e Modo Operação vão abrir direto na sua fila.</p>
       <div class="field">
-        <label class="lbl">Barbeiro vinculado</label>
+        <label class="lbl">${vocabProf()} vinculado</label>
         <select id="dono-barb-sel" class="inp" style="margin-top:4px">
           <option value="">Nenhum (exibe todos)</option>
           ${cfg.barbeiros.map(b=>`<option value="${esc(b)}" ${(currentBarbeiro||'')=== b?'selected':''}>${esc(b)}</option>`).join('')}
@@ -2474,7 +2511,7 @@ function viewConfig(){
       <p style="font-size:11px;color:var(--text-3)">Aparece como barra de progresso na tela Início.</p>
     </div>
     <div class="card" style="margin-top:14px">
-      <h3 style="font-size:14px;margin-bottom:12px">💸 Comissão por Barbeiro</h3>
+      <h3 style="font-size:14px;margin-bottom:12px">💸 Comissão por ${vocabProf()}</h3>
       <p style="font-size:12px;color:var(--text-2);margin-bottom:12px">Percentual sobre o valor dos serviços concluídos. Calculado nos relatórios.</p>
       ${cfg.barbeiros.map(b=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <span style="flex:1;font-size:13px">${esc(b)}</span>
@@ -2528,7 +2565,7 @@ function viewConfig(){
       <h3 style="font-size:14px;margin-bottom:4px">Serviços</h3>
       <p style="font-size:11px;color:var(--text-3);margin-bottom:12px">Preço e tempo de execução de cada serviço.</p>
       ${cfg.servicos.length?cfg.servicos.map((s,i)=>`<div style="padding:10px 12px;background:var(--inner);border:1px solid var(--border);border-radius:8px;margin-bottom:7px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="flex:1;font-size:13px;display:flex;align-items:center;gap:6px">${ICON.scissors(12,'#C9A84C')}${esc(s.nome)}</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="flex:1;font-size:13px;display:flex;align-items:center;gap:6px">${iconeMarca(12,'#C9A84C')}${esc(s.nome)}</span>
         <button style="background:none;border:none;color:var(--red);font-size:16px" onclick="cfg_delArr('servicos',${i})">×</button></div>
         <div style="display:flex;gap:8px">
           <div style="flex:1"><div style="font-size:10px;color:var(--text-3);margin-bottom:3px">PREÇO (R$)</div><input type="number" step="0.01" min="0" class="inp" value="${s.preco||0}" onchange="cfg_setServ(${i},'preco',this.value)"></div>
@@ -2712,11 +2749,11 @@ function closeModal(){ document.getElementById('modal-root').innerHTML=''; }
 
 /* ============ ÍCONES DO TEMPLATE ============ */
 (function injectIcons(){
-  const s=document.querySelector('#sidebar .side-head .side-logo'); if(s)s.innerHTML=ICON.scissors(16,'#0A0A0A');
+  const s=document.querySelector('#sidebar .side-head .side-logo'); if(s)s.innerHTML=iconeMarca(16,'#0A0A0A');
   const sx=document.querySelector('#sidebar .side-head button'); if(sx)sx.innerHTML=ICON.x(20);
-  const sd=document.querySelector('.side-logo.only-desktop'); if(sd)sd.innerHTML=ICON.scissors(17,'#0A0A0A');
+  const sd=document.querySelector('.side-logo.only-desktop'); if(sd)sd.innerHTML=iconeMarca(17,'#0A0A0A');
   const bur=document.querySelector('#topbar .burger'); if(bur)bur.innerHTML=ICON.menu(20,'#C9A84C');
-  const brand=document.querySelector('#topbar-brand'); if(brand&&!brand.querySelector('svg'))brand.insertAdjacentHTML('afterbegin',ICON.scissors(16,'#C9A84C'));
+  const brand=document.querySelector('#topbar-brand'); if(brand&&!brand.querySelector('svg'))brand.insertAdjacentHTML('afterbegin',iconeMarca(16,'#C9A84C'));
   const tema=document.querySelector('#btn-tema'); if(tema) tema.innerHTML=temaClaro?ICON.moon(20,'#C9A84C'):ICON.sun(20,'#C9A84C');
   const sino=document.querySelector('#btn-sino'); if(sino&&!sino.querySelector('svg'))sino.insertAdjacentHTML('afterbegin',ICON.bell(20,'#C9A84C'));
   const novo=document.querySelector('#btn-novo'); if(novo)novo.innerHTML=ICON.plus(20,'#C9A84C');
@@ -2727,7 +2764,7 @@ function mostrarTelaLogin(erro){
     <div style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px">
       <div style="width:100%;max-width:360px">
         <div style="text-align:center;margin-bottom:32px">
-          <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-m));display:flex;align-items:center;justify-content:center;margin:0 auto 14px">${ICON.scissors(28,'#0A0A0A')}</div>
+          <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-m));display:flex;align-items:center;justify-content:center;margin:0 auto 14px">${iconeMarca(28,'#0A0A0A')}</div>
           <h1 style="font-size:22px;font-weight:700">${esc(state.config?.barbearia?.nome||'Na Régua')}</h1>
           <p style="font-size:13px;color:var(--text-3);margin-top:4px">Faça login para continuar</p>
         </div>
@@ -2795,7 +2832,7 @@ async function fazerLogout(){
           <button class="btn btn-red" style="font-size:11px;padding:5px 10px;flex-shrink:0;margin-left:10px" onclick="revogarAcesso('${f.uid}','${esc(f.nome||f.email)}')">🚫 Revogar</button>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <label style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Barbeiro:</label>
+          <label style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${vocabProf()}:</label>
           <select onchange="vincularBarbeiroFuncionario('${f.uid}',this.value)" style="flex:1;padding:5px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none">
             <option value="" ${!f.barbeiro?'selected':''}>Nenhum (acesso geral)</option>
             ${barbs.map(b=>`<option value="${esc(b)}" ${f.barbeiro===b?'selected':''}>${esc(b)}</option>`).join('')}
@@ -2867,12 +2904,12 @@ async function modalCadastrarFuncionario(){
     <div class="field"><label class="lbl">Email</label><input id="fn-email" type="email" class="inp" placeholder="email@exemplo.com"></div>
     <div class="field"><label class="lbl">Senha inicial</label><input id="fn-senha" type="password" class="inp" placeholder="Mínimo 6 caracteres"></div>
     <div class="field">
-      <label class="lbl">Barbeiro vinculado</label>
+      <label class="lbl">${vocabProf()} vinculado</label>
       <select id="fn-barb" class="inp">
         <option value="">Nenhum (acesso geral)</option>
         ${barbs.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('')}
       </select>
-      <div style="font-size:11px;color:var(--text-3);margin-top:5px">Vinculando a um barbeiro, a agenda dele será filtrada automaticamente ao entrar.</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:5px">Vinculando a um ${vocabProf().toLowerCase()}, a agenda dele será filtrada automaticamente ao entrar.</div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="criarFuncionario()">Cadastrar</button></div>
   `);
@@ -3246,6 +3283,7 @@ async function boot(){
   mostrarAvisoBackup();
   applyTema();
   aplicarCorLoja();
+  aplicarIconesMarca();
   // loading state
   const viewEl=document.getElementById('view');
   if(viewEl) viewEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:14px"><div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite"></div><p style="font-size:13px;color:var(--text-3)">Carregando...</p></div>`;
@@ -3286,6 +3324,7 @@ async function boot(){
     setCloudStatus(ok?'☁️ Supabase sincronizado':'⚠️ Sem conexão — dados locais', ok?'#22C55E':'#F59E0B');
   }
   aplicarCorLoja();
+  aplicarIconesMarca();
   render();
   // Verificar notificações a cada 60 segundos
   verificarNotificacoes();
@@ -3325,7 +3364,7 @@ function toggleModoOp(){
     clearInterval(_modoOpInterval);
   }
   const btn=document.getElementById('btn-modo-op');
-  if(btn) btn.innerHTML=_modoOpAtivo?ICON.x(18,'#EF4444'):ICON.scissors(18,'#C9A84C');
+  if(btn) btn.innerHTML=_modoOpAtivo?ICON.x(18,'#EF4444'):iconeMarca(18,'#C9A84C');
 }
 function modoOpSelecionarBarb(b){
   _modoOpBarb=b;
@@ -3367,7 +3406,7 @@ function renderModoOp(){
   ov.innerHTML=
     // Topbar
     '<div style="position:absolute;top:0;left:0;right:0;padding:env(safe-area-inset-top,0) 16px 0;height:calc(52px + env(safe-area-inset-top,0px));background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:10px">'
-      +'<div style="display:flex;align-items:center;gap:6px">'+ICON.scissors(16,'#C9A84C')+'<span style="font-size:13px;font-weight:700;color:var(--gold)">'+esc(barbearia)+'</span></div>'
+      +'<div style="display:flex;align-items:center;gap:6px">'+iconeMarca(16,'#C9A84C')+'<span style="font-size:13px;font-weight:700;color:var(--gold)">'+esc(barbearia)+'</span></div>'
       +'<button onclick="toggleModoOp()" style="background:var(--red-bg);border:1px solid var(--red);border-radius:8px;padding:5px 14px;color:var(--red);cursor:pointer;font-size:12px;font-weight:700">✕ Sair</button>'
     +'</div>'
     // Conteúdo central
@@ -3395,7 +3434,7 @@ function renderModoOp(){
     );
 }
 // Inicializa ícone do botão no topbar após boot
-setTimeout(()=>{ const btn=document.getElementById('btn-modo-op'); if(btn) btn.innerHTML=ICON.scissors(18,'#C9A84C'); },150);
+setTimeout(()=>{ const btn=document.getElementById('btn-modo-op'); if(btn) btn.innerHTML=iconeMarca(18,'#C9A84C'); },150);
 </script>
 </body>
 </html>
